@@ -1,0 +1,39 @@
+version: '3'
+services:
+  kelon:
+    image: kelon:latest
+    restart: always
+    depends_on:
+      - postgres
+    ports:
+      - "8181:8181"
+    volumes:
+      - ./kelon-config/:/conf
+      - ./kelon-config/postgres-call-operands.yml:/call-operands/postgres.yml
+    environment:
+      - DATASTORE_CONF=/conf/datastore.yml
+      - API_CONF=/conf/api.yml
+      - OPA_CONF=/conf/opa.yml
+      - REGO_DIR=/conf
+
+  postgres:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: 'appstore'
+      POSTGRES_USER: 'admin'
+      POSTGRES_PASSWORD: 'SuperSecure'
+    ports:
+      - '5432:5432'
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./init-postgres-schemas.sql:/docker-entrypoint-initdb.d/Init-Postgres.sql
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8081:8080
+
+volumes:
+  pg-data:
