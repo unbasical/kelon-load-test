@@ -31,15 +31,14 @@ allow {
 }
 
 # Path: GET /api/apps/:app_id
-# Only user can view his apps
+# Only user can edit his apps
 allow {
     some user, app, userId, appId
 
     input.method == "PUT"
     input.path = ["api", "users", userId, "apps", appId]
 
-    global.hasToken
-    data.pg.users[user].name = global.token.payload.sub
+    data.pg.users[user].name = input.username
     data.pg.app[app].user_id = user.id
     app.id = appId
     user.id = userId

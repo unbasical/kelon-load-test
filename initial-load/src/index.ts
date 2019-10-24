@@ -1,3 +1,5 @@
+// Author: Daniel Seifert
+
 import {Client} from 'pg'
 import {from, range, Observable, of} from 'rxjs'
 import {flatMap, tap, map, mergeMap, mapTo, last} from 'rxjs/operators'
@@ -85,7 +87,7 @@ const insertUser = (i: number, role: string, client: Client): Observable<number>
         map(() => i)
     )
 
-    const insertApp = (appId: number, userId: number, client: Client): Observable<number> => 
+const insertApp = (appId: number, userId: number, client: Client): Observable<number> => 
     of({
         id: appId,
         title: `This is App ${userId}`,
