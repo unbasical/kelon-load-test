@@ -1,0 +1,14 @@
+apis:
+  - datastore: pg
+    mappings:
+      # Security for web-app access
+      - path: .*
+        package: web
+      # Security for all APIs (as Fallback)
+      - path: /api.*
+        package: api
+      # Security for apps
+      - path: /api/apps.*
+        package: applications
+      - path: /api/users/\d+/apps/\d+
+        package: applications

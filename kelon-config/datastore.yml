@@ -1,0 +1,28 @@
+# Datastores to connect to
+datastores:
+  pg:
+    type: postgres
+    connection:
+      host: postgres
+      port: 5432
+      database: appstore
+      user: admin
+      password: SuperSecure
+
+# Entity-Schemas define the structure of the entities of one schema inside a datastore
+entity_schemas:
+  pg:
+    appstore:
+      entities:
+        - app
+        - app_comments
+        - app_ratings
+        - app_screenshots
+        - app_tags
+        - comment
+        - feedback
+        - logo
+        - rating
+        - screenshot
+        - tag
+        - users
