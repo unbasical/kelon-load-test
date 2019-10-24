@@ -27,13 +27,18 @@ services:
       - '5432:5432'
     volumes:
       - pg-data:/var/lib/postgresql/data
-      - ./init-postgres-schemas.sql:/docker-entrypoint-initdb.d/Init-Postgres.sql
-
-  adminer:
-    image: adminer
-    restart: always
+      - ./initial-load/Init-db.sql:/docker-entrypoint-initdb.d/Init-Postgres.sql
+  
+  pgadmin:
+    image: dpage/pgadmin4
+    depends_on:
+      - postgres
     ports:
-      - 8081:8080
+      - "5555:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.org
+      PGADMIN_DEFAULT_PASSWORD: admin
+    restart: unless-stopped
 
 volumes:
   pg-data:
