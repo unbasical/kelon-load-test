@@ -1,6 +1,16 @@
 import {Client} from 'pg'
 import {from, range, Observable, of} from 'rxjs'
-import {flatMap, tap, map} from 'rxjs/operators'
+import {flatMap, tap, map, mergeMap, mapTo, last} from 'rxjs/operators'
+
+// Adjust amount of created entities
+const AMOUNT_OF_DEVELOPERS = 1000
+const APPS_PER_DEVELOPER = 10
+const AMOUNT_OF_USERS = 1000
+
+// Execute main on start
+main()
+.catch(err => console.error(err))
+.then(() => console.log("Done"))
 
 async function main() {
     // Create client
@@ -29,30 +39,65 @@ async function main() {
         TRUNCATE appstore.users CASCADE;
     `)
 
-    // Insert data
-    await range(1, 100).pipe(
-        flatMap(i => insertUser(i, client)),
-        tap(i => console.log(i))
+    // Create Admin
+    await of(1).pipe(
+        flatMap(i => insertUser(i, 'ADMIN', client))
     ).toPromise()
+
+    // Create Developers
+    let from = 2
+    let amount = AMOUNT_OF_DEVELOPERS
+    await range(from, amount).pipe(
+        flatMap(i => insertUser(i, 'DEVELOPER', client)),
+        flatMap(userId => range(userId * APPS_PER_DEVELOPER, APPS_PER_DEVELOPER).pipe(
+            flatMap(appId => insertApp(appId, userId, client))
+        )),
+        last(),
+    ).toPromise()
+
+    // Create Users
+    from = amount + 2
+    amount = AMOUNT_OF_USERS
+    await range(from, amount).pipe(
+        tap(i => console.log(`Create USER ${i}`)),
+        flatMap(i => insertUser(i, 'USER', client)),
+        last(),
+    ).toPromise()
+
+    // End
     await client.end()
 }
 
-main()
-.catch(err => console.error(err))
-.then(() => console.log("Done"))
-
-const insertUser = (i: number, client: Client): Observable<number> => 
+const insertUser = (i: number, role: string, client: Client): Observable<number> => 
     of({
         id: i,
         name: `user-${i}`, 
         email: `user${i}@company.com`,
         password: `user-${i}`,
-        role: 'ADMIN'
+        role: role
     }).pipe(
         flatMap(u => from(client.query(
             `INSERT INTO appstore.users 
-                (id, name, email, password, role) 
-                VALUES (${u.id}, '${u.name}', '${u.email}', '${u.password}', '${u.role}')`
+                (id, create_date, update_date, name, email, password, role) 
+                VALUES (${u.id}, now(), now(), '${u.name}', '${u.email}', '${u.password}', '${u.role}')`
         ))),
+        tap(() => console.log(`Create ${role} ${i}`)),
         map(() => i)
+    )
+
+    const insertApp = (appId: number, userId: number, client: Client): Observable<number> => 
+    of({
+        id: appId,
+        title: `This is App ${userId}`,
+        description: `This is App ${userId} which is owned by user ${userId}`, 
+        views: Math.floor(Math.random() * 1000000),
+        user_id: userId
+    }).pipe(
+        flatMap(a => from(client.query(
+            `INSERT INTO appstore.app 
+                (id, create_date, update_date, title, description, views, user_id) 
+                VALUES (${a.id}, now(), now(), '${a.title}', '${a.description}', '${a.views}', '${a.user_id}')`
+        ))),
+        tap(() => console.log(`Create app ${appId} Owner ${userId}`)),
+        map(() => userId)
     )
